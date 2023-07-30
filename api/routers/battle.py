@@ -5,12 +5,14 @@ from api.dependencies.exception import APIException
 from api.dependencies.security import HeaderInitParams
 from api.responses.battle import AppointBattleSchema, GetAllCurrentBattlesSchema
 from api.schemas.base import SuccessResponse
-from api.schemas.battle import BattleMethodRequest, GetAllCurrentBattlesRequest
+from api.schemas.battle import BattleMethodRequest, GetAllCurrentBattlesRequest, AssignRandomOpponentRequest
 from bot.notification import send_invitation_battle
-from db.alchemy.battle import add_invitation, check_pending_prompts, get_current_battles_by_tag, get_participant
+from db.alchemy.battle import add_invitation, check_pending_prompts, get_current_battles_by_tag, get_participant, \
+    assign_random_opponent
 from db.alchemy.video import get_video
 from db.models.database import get_async_session
 from db.models.video import Video
+from utils.determine_tag_id import get_tag_id
 
 router = APIRouter(prefix="/battle", tags=["Вызовы"])
 
@@ -94,4 +96,15 @@ async def appoint_battle_router(
 
     await send_invitation_battle(user_video, opponent_video, invitation.invitation_id)
     return SuccessResponse(success=True)
+
+
+# todo Описать схему ответа
+@router.post("/assign-random-opponent")
+async def assign_random_opponent_router(
+        launch_params: HeaderInitParams,
+        params: AssignRandomOpponentRequest,
+        session: AsyncSession = Depends(get_async_session)
+):
+    tag_id, tags_categories = await get_tag_id(session, params.tag)
+    return await assign_random_opponent(session, tag_id, launch_params.user_id)
 

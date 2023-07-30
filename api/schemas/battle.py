@@ -68,3 +68,7 @@ class ItemResponseGetAllCurrentBattles(BaseModel):
 class GetAllCurrentBattlesResponse(BaseModel):
     """Модель ответа роутера get-all-current-battles"""
     items: list[ItemResponseGetAllCurrentBattles]
+
+
+class AssignRandomOpponentRequest(BaseModel):
+    tag: str = fields.tag

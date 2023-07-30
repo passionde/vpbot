@@ -6,16 +6,14 @@ from aiogram.types import WebAppInfo
 from config import HTTPS_HOST
 
 
-def battle_keyboard_for_user(invitation_id: int) -> types.InlineKeyboardMarkup:
-    # todo handler для обработки url
+def battle_keyboard_for_user(event_id: int, is_invitation=True) -> types.InlineKeyboardMarkup:
+    url = f"{HTTPS_HOST}/web/battle.html?invitation={event_id}"
+    if not is_invitation:
+        url = f"{HTTPS_HOST}/web/battle.html?battle={event_id}"
+
     markup = types.InlineKeyboardMarkup()
     markup.add(
-        types.InlineKeyboardButton(
-            "📺",
-            web_app=WebAppInfo(
-                url=f"{HTTPS_HOST}/web/battle?invitation={invitation_id}"
-            )
-        ),
+        types.InlineKeyboardButton("📺", web_app=WebAppInfo(url=url)),
     )
     return markup
 

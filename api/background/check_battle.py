@@ -78,7 +78,7 @@ async def handle_battle(battle: Battle, session: AsyncSession):
         user_winner_id, user_loser_id = video_2.user_id, video_1.user_id
 
     # Отправка уведомления участникам
-    await send_result_battle(user_winner_id, user_loser_id)
+    await send_result_battle(user_winner_id, user_loser_id, battle.battle_id)
 
     # Изменение рейтинга и баланса участников
     await change_vp_coins(session, user_winner_id, AWARD_FOR_VICTORY)

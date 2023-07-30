@@ -1,8 +1,11 @@
 import json
+import os
 
 from aiogram import types
+from aiogram.utils.exceptions import BadRequest
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from bot.vp_bot import vp_bot
 from db.alchemy.battle import get_invitation, change_status_invitation, new_battle
 from db.alchemy.video import get_video
 from db.models.video import Video
@@ -96,3 +99,21 @@ async def handle_agreement(callback: types.CallbackQuery, session: AsyncSession)
         return "Произошла ошибка при сохранении в БД, попробуйте позже", False
 
     return "Вы подтвердили участие в вызове!", True
+
+
+async def get_profile_info(user_id: int):
+    try:
+        photo = await vp_bot.get_user_profile_photos(user_id, limit=1)
+        user = (await vp_bot.get_chat_member(user_id, user_id)).user
+    except BadRequest:
+        return None
+
+    img_path = f"../files/images/{user_id}.jpg"
+    if not os.path.exists(img_path):
+        await photo.photos[0][0].download(destination_file=img_path)
+
+    return {
+        "photo_url_160": f"img/{user_id}.jpg",
+        "username_or_first_name": user.username if user.username else user.first_name,
+        "url": user.url
+    }

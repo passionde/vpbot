@@ -1,9 +1,11 @@
+import random
 from datetime import datetime, timedelta
 from typing import List
 
 from sqlalchemy import desc, or_, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
+from sqlalchemy.testing import not_in_
 
 from db.models.video import Video, Tag
 from setting import BATTLE_DURATION_DAY, BATTLES_PER_PAGE
@@ -186,3 +188,24 @@ async def change_status_invitation(session: AsyncSession, invitation_id: int, st
     invitation.status = status
     session.add(invitation)
     return await safe_commit(session)
+
+
+async def assign_random_opponent(session: AsyncSession, tag_id: int, user_id: int) -> str | None:
+    """Возвращает ID видео из категории tag, не принадлежащее пользователю с user_id"""
+    # battles_user_not_finish = await session.execute(
+    #     select(Battle.participant_1)
+    #     .where(and_(
+    #
+    #     ))
+    # )
+    result = await session.execute(
+        select(Video.video_id)
+        .where(and_(
+            Video.user_id != user_id,
+            Video.tag_id == tag_id,
+            # not_in_(battles_user_not_finish)
+        ))
+    )
+
+    result = list(result.scalars().all())
+    return random.choice(result) if result else None
