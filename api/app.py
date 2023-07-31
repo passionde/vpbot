@@ -42,7 +42,7 @@ app = FastAPI(
 )
 
 # app.mount("/web", StaticFiles(directory="../files/static"), name="static")
-app.mount("/img", StaticFiles(directory="../files/images"), name="images")
+app.mount("/img", StaticFiles(directory="files/images"), name="images")
 
 prefix_router = APIRouter(prefix="/api")
 
