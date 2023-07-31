@@ -6,9 +6,9 @@ from aiogram.utils import executor
 from bot.keyboard import battle_keyboard_for_user
 from db.alchemy.user import new_user
 from db.models.database import async_session_maker
-from functions import handle_refusal, handle_agreement
-from notification import send_refuse_battle, send_agreement_battle
-from vp_bot import vp_bot
+from bot.functions import handle_refusal, handle_agreement
+from bot.notification import send_refuse_battle, send_agreement_battle
+from bot.vp_bot import vp_bot
 
 dp = Dispatcher(vp_bot)
 

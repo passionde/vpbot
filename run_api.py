@@ -12,5 +12,5 @@ if __name__ == "__main__":
         log_level="info",
         port=PORT,
         workers=WORKERS,
-        log_config=f"{cwd}/../log.ini"
+        log_config=f"{cwd}/log.ini"
     )
