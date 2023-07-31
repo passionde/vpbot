@@ -9,8 +9,7 @@ from db.models.database import Base
 class Tag(Base):
     __tablename__ = "Tag"
 
-    tag_id = Column(Integer, primary_key=True, autoincrement=True)
-    tag_name = Column(String)
+    tag = Column(String, primary_key=True)
 
 
 class Video(Base):
@@ -21,4 +20,5 @@ class Video(Base):
     is_active = Column(Boolean, default=True)
 
     user_id = Column(Integer, ForeignKey("User.user_id"))
-    tag_id = Column(Integer, ForeignKey("Tag.tag_id"))
+    tag_name = Column(String, ForeignKey("Tag.tag"))
+

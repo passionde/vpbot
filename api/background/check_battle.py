@@ -1,10 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.notification import send_result_battle
-from db.alchemy.battle import get_expired_battles, get_participant
+from db.alchemy.battle import get_expired_battles, change_status_invitation
 from db.alchemy.user import change_vp_coins, change_rating
 from db.alchemy.video import get_video
-from db.models.battle import Battle, Participant
+from db.models.battle import Battle
 from db.models.database import async_session_maker
 from setting import AWARD_FOR_VICTORY, DISCARD_FOR_LOSS, WIN_RANKING_CHANGE, LOSE_RANKING_CHANGE
 from utils.youtube import get_video_info
@@ -13,66 +13,58 @@ from utils.youtube import get_video_info
 videos_not_found: dict[int: int] = {}
 
 
-def determine_winner(participant_1: Participant, participant_2: Participant) -> (int, int):
-    """Определяет победителя и проигравшего. Возвращается ID победителя и ID проигравшего"""
-    total_likes_1 = participant_1.number_likes_finish - participant_1.number_likes_finish
-    total_likes_2 = participant_2.number_likes_finish - participant_2.number_likes_finish
+def determine_winner(battle: Battle) -> (int, int):
+    """Определяет победителя и проигравшего. Возвращается ID  видио победителя и проигравшего"""
+    total_likes_1 = battle.likes_finish_1 - battle.likes_start_1
+    total_likes_2 = battle.likes_finish_2 - battle.likes_start_2
 
     if total_likes_1 > total_likes_2:
-        winner_id = participant_1.participant_id
-    elif (total_likes_1 == total_likes_2) and participant_1.number_likes_start > participant_2.number_likes_start:
-        winner_id = participant_1.participant_id
+        winner_id, loser_id = battle.video_id_1, battle.video_id_2
+    elif (total_likes_1 == total_likes_2) and battle.likes_start_1 > battle.likes_start_2:
+        winner_id, loser_id = battle.video_id_1, battle.video_id_2
     else:
-        winner_id = participant_2.participant_id
-
-    if winner_id == participant_1.participant_id:
-        loser_id = participant_2.participant_id
-    else:
-        loser_id = participant_1.participant_id
+        winner_id, loser_id = battle.video_id_2, battle.video_id_1
 
     return winner_id, loser_id
 
 
 async def handle_battle(battle: Battle, session: AsyncSession):
-    # Получение информации об участниках
-    participant_1 = await get_participant(session, battle.participant_1)
-    participant_2 = await get_participant(session, battle.participant_2)
-
     # Получение информации об видео
-    video_1 = await get_video(session, participant_1.video_id)
-    video_2 = await get_video(session, participant_2.video_id)
+    video_1 = await get_video(session, battle.video_id_1)
+    video_2 = await get_video(session, battle.video_id_2)
 
-    info_1 = await get_video_info(participant_1.video_id)
-    info_2 = await get_video_info(participant_2.video_id)
+    info_1 = await get_video_info(battle.video_id_1)
+    info_2 = await get_video_info(battle.video_id_2)
 
     # Подсчет лайков и определение победителя
     # Если нет ошибки, то записывается текущее число лайков
     # Если есть, то смотрится количество попыток, если их < 3 то завершается обработка
     # Если больше, то идет выполнение дальше и считается, что количество лайков не изменилось
     if info_1:
-        participant_1.number_likes_finish = info_1.likes
-    elif videos_not_found.get(participant_1.video_id, 0) + 1 < 3:
-        videos_not_found[participant_1.video_id] = videos_not_found.get(participant_1.video_id, 0) + 1
+        battle.likes_finish_1 = info_1.likes
+    elif videos_not_found.get(battle.video_id_1, 0) + 1 < 3:
+        videos_not_found[battle.video_id_1] = videos_not_found.get(battle.video_id_1, 0) + 1
         return
 
     if info_2:
-        participant_2.number_likes_finish = info_2.likes
-    elif videos_not_found.get(participant_2.video_id, 0) + 1 < 3:
-        videos_not_found[participant_2.video_id] = videos_not_found.get(participant_2.video_id, 0) + 1
+        battle.likes_finish_2 = info_2.likes
+    elif videos_not_found.get(battle.video_id_2, 0) + 1 < 3:
+        videos_not_found[battle.video_id_2] = videos_not_found.get(battle.video_id_2, 0) + 1
         return
 
-    videos_not_found.pop(participant_1.video_id, None)
-    videos_not_found.pop(participant_2.video_id, None)
+    videos_not_found.pop(battle.video_id_1, None)
+    videos_not_found.pop(battle.video_id_2, None)
 
-    participant_winner_id, participant_looser_id = determine_winner(participant_1, participant_2)
+    video_winner_id, video_loser_id = determine_winner(battle)
 
-    battle.winner = participant_winner_id
+    battle.winner_id = video_winner_id
+    battle.loser_id = video_loser_id
+
     battle.is_finish = True
-
-    session.add_all((battle, participant_1, participant_2))
+    session.add(battle)
     await session.commit()
 
-    if participant_winner_id == participant_1.participant_id:
+    if video_winner_id == battle.video_id_1:
         user_winner_id, user_loser_id = video_1.user_id, video_2.user_id
     else:
         user_winner_id, user_loser_id = video_2.user_id, video_1.user_id
@@ -86,6 +78,9 @@ async def handle_battle(battle: Battle, session: AsyncSession):
 
     await change_rating(session, user_winner_id, WIN_RANKING_CHANGE)
     await change_rating(session, user_loser_id, LOSE_RANKING_CHANGE)
+
+    # todo сделать ENUM
+    await change_status_invitation(session, battle.invitation_id, "completed")
 
 
 async def check_battle_completion():

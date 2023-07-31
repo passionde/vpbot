@@ -3,9 +3,9 @@ from typing import List
 from sqlalchemy import desc, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from setting import VIDEOS_PER_PAGE
 from db.models.video import Video
 from db.alchemy.database import safe_commit
+from setting import ITEMS_PER_PAGE
 
 
 async def change_is_active_status(session: AsyncSession, video: Video, is_active: bool) -> bool:
@@ -27,44 +27,44 @@ async def get_video(session: AsyncSession, video_id: str) -> Video | None:
     return video[0]
 
 
-async def new_video(session: AsyncSession, video_id: str, user_id: int, tag_id: int) -> bool:
+async def new_video(session: AsyncSession, video_id: str, user_id: int, tag: str) -> bool:
     """Создает новое видео"""
     # создание нового видео
     video = Video(
         video_id=video_id,
         user_id=user_id,
-        tag_id=tag_id
+        tag_name=tag
     )
     session.add(video)
     return await safe_commit(session)
 
 
-async def get_all_videos_by_tag(session: AsyncSession, tag_id: int, page: int) -> List[Video]:
+async def get_videos_by_tag(session: AsyncSession, tag: str, page: int) -> List[Video]:
     """Получение всех видео категории с учетом пагинации"""
     # Вычисление индекса первого видео на странице
-    start_index = (abs(page) - 1) * VIDEOS_PER_PAGE
+    start_index = (abs(page) - 1) * ITEMS_PER_PAGE
 
     # Запрос видео с заданным тэгом и пагинацией
     result = await session.execute(
         select(Video)
         .filter(and_(
-            Video.tag_id == tag_id,
+            Video.tag_name == tag,
             Video.is_active == True
         ))
         .order_by(desc(Video.date_added))
         .offset(start_index)
-        .limit(VIDEOS_PER_PAGE)
+        .limit(ITEMS_PER_PAGE)
     )
     return list(result.scalars().all())
 
 
-async def get_user_videos_by_tag(session: AsyncSession, tag_id: int, user_id: int) -> List[Video]:
+async def get_user_videos_by_tag(session: AsyncSession, tag: str, user_id: int) -> List[Video]:
     """Получение видео пользователя по категории"""
     result = await session.execute(
         select(Video)
         .filter(and_(
             Video.user_id == user_id,
-            Video.tag_id == tag_id,
+            Video.tag_name == tag,
             Video.is_active == True
         ))
     )

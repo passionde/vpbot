@@ -5,7 +5,7 @@ from db.models.database import get_async_session
 from api.schemas.user import GetUserInfoResponse
 from api.responses.user import GetUserInfoSchema
 from api.dependencies.security import HeaderInitParams
-from db.alchemy.user import new_user, get_user
+from db.alchemy.user import get_user
 
 router = APIRouter(prefix="/user", tags=["Пользователи"])
 
@@ -16,11 +16,7 @@ async def get_user_info_router(
         session: AsyncSession = Depends(get_async_session)
 ):
     """Данные профиля пользователя"""
-    # Создание пользователя при его отсутствии
-    user = await new_user(session, launch_params.user_id)
-
-    if not user:
-        user = await get_user(session, launch_params.user_id)
+    user = await get_user(session, launch_params.user_id)
 
     return GetUserInfoResponse(
         user_id=user.user_id,

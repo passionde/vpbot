@@ -4,114 +4,52 @@ from typing import List
 
 from sqlalchemy import desc, or_, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import aliased
-from sqlalchemy.testing import not_in_
 
-from db.models.video import Video, Tag
-from setting import BATTLE_DURATION_DAY, BATTLES_PER_PAGE
-from db.models.battle import Participant, Battle, InvitationBattle
+from db.alchemy.video import get_user_videos_by_tag
+from db.models.video import Video
+from setting import ITEMS_PER_PAGE, BATTLE_DURATION_HOUR
+from db.models.battle import Battle, InvitationBattle
 from db.alchemy.database import safe_commit
 
 
-async def new_battle(session: AsyncSession, video_1: str, video_2: str, likes_1: int, likes_2: int) -> bool:
-    # Создание объектов Participant
-    participant_1 = Participant(number_likes_start=likes_1, number_likes_finish=likes_1, video_id=video_1)
-    participant_2 = Participant(number_likes_start=likes_2, number_likes_finish=likes_2, video_id=video_2)
-    session.add_all([participant_1, participant_2])
-    await safe_commit(session)
-
-    # Создание объекта Battle
+async def new_battle(
+        session: AsyncSession, video_1: str, video_2: str, likes_1: int, likes_2: int,
+        invitation_id: int, tag: str
+) -> bool:
     battle_start = datetime.now()
-    battle_end = battle_start + timedelta(days=BATTLE_DURATION_DAY)
+    battle_end = battle_start + timedelta(hours=BATTLE_DURATION_HOUR)
+
     battle = Battle(
         date_start=battle_start,
         date_end=battle_end,
-        is_finish=False,
-        participant_1=participant_1.participant_id,
-        participant_2=participant_2.participant_id,
-        winner=None
+        video_id_1=video_1,
+        video_id_2=video_2,
+        likes_start_1=likes_1,
+        likes_start_2=likes_2,
+        likes_finish_1=likes_1,
+        likes_finish_2=likes_2,
+        invitation_id=invitation_id,
+        tag_name=tag
     )
-
-    # Сохранение объектов в базе данных
     session.add(battle)
     return await safe_commit(session)
 
 
-async def get_participant(session: AsyncSession, participant_id: int) -> Participant | None:
-    """Получение участника батла по ID"""
-    participant = await session.execute(
-        select(Participant)
-        .where(Participant.participant_id == participant_id)
-    )
-    participant = participant.first()
-    if not participant:
-        return None
-    return participant[0]
-
-
-async def get_user_battles(session: AsyncSession, user_id: int, page: int) -> List[Battle]:
-    """Получение батлов пользователя"""
-    # Вычисление индекса первого батла на странице
-    start_index = (abs(page) - 1) * BATTLES_PER_PAGE
-
-    # Запрос батлов, в которых пользователь участвовал с использованием пагинации
-    query = (
-        session.query(Battle)
-        .filter(or_(Battle.participant_1 == user_id, Battle.participant_2 == user_id))
-        .order_by(desc(Battle.date_start))
-        .offset(start_index)
-        .limit(BATTLES_PER_PAGE)
-    )
-
-    # Исполнение запроса и получение батлов
-    result = await session.execute(query)
-    return list(result.scalars().all())
-
-
-# todo не используется, но возможно пригодится
-async def get_all_current_battles(session: AsyncSession, page: int) -> List[Battle]:
-    """Получение текущих незавершенных боев с учетом пагинации"""
-    # Вычисление индекса первого батла на странице
-    start_index = (abs(page) - 1) * BATTLES_PER_PAGE
-
-    # Запрос незавершенных батлов с использованием пагинации
-    result = await session.execute(
-        select(Battle)
-        .filter(Battle.is_finish != True)
-        .order_by(desc(Battle.date_start))
-        .offset(start_index)
-        .limit(BATTLES_PER_PAGE)
-    )
-    # Исполнение запроса и получение батлов
-    return list(result.scalars().all())
-
-
-async def get_current_battles_by_tag(session: AsyncSession, page: int, tag_name: str) -> List[Battle]:
+async def get_current_battles_by_tag(session: AsyncSession, page: int, tag: str) -> List[Battle]:
     """Получение текущих незавершенных боев с учетом пагинации и категории тэга"""
-    start_index = (abs(page) - 1) * BATTLES_PER_PAGE
-
-    # Создаем псевдонимы для таблицы Video и связанной таблицы Tag
-    video_alias = aliased(Video)
-    tag_alias = aliased(Tag)
+    start_index = (abs(page) - 1) * ITEMS_PER_PAGE
 
     # Запрос незавершенных батлов с использованием пагинации и фильтрации по тэгу
-    query = (
+    result = await session.execute(
         select(Battle)
-        .join(Participant, or_(
-            Battle.participant_1 == Participant.participant_id,
-            Battle.participant_2 == Participant.participant_id
+        .filter(and_(
+            Battle.is_finish == False,
+            Battle.tag_name == tag
         ))
-        .join(video_alias, Participant.video_id == video_alias.video_id)
-        .join(tag_alias, video_alias.tag_id == tag_alias.tag_id)
-        .filter(Battle.is_finish != True, tag_alias.tag_name == tag_name)
         .order_by(desc(Battle.date_start))
         .offset(start_index)
-        .limit(BATTLES_PER_PAGE)
-        .distinct(Battle.battle_id)  # Исключение дупликатов боев по battle_id
+        .limit(ITEMS_PER_PAGE)
     )
-
-    # Выполняем запрос и получаем батлы
-    result = await session.execute(query)
     return list(result.scalars().all())
 
 
@@ -143,7 +81,7 @@ async def add_invitation(session: AsyncSession, user_video_id: str, opponent_vid
 
 
 async def check_pending_prompts(session: AsyncSession, video_id_1: str, video_id_2: str) -> bool:
-    """Проверяет наличие необработанных приглашений (status == 1). True - есть, False - нет"""
+    """Проверяет наличие необработанных приглашений (status == waiting). True - есть, False - нет"""
     invitation = await session.execute(
         select(InvitationBattle)
         .where(
@@ -156,7 +94,11 @@ async def check_pending_prompts(session: AsyncSession, video_id_1: str, video_id
                     InvitationBattle.video_id_appointing == video_id_1,
                     InvitationBattle.video_id_appointing == video_id_2
                 ),
-                InvitationBattle.status == 1
+                or_(
+                    InvitationBattle.status == "waiting",  # todo сделать ENUM
+                    InvitationBattle.status == "agreement"  # todo сделать ENUM
+                )
+
             )
         )
     )
@@ -178,9 +120,8 @@ async def get_invitation(session: AsyncSession, invitation_id: int) -> Invitatio
     return invitation[0]
 
 
-async def change_status_invitation(session: AsyncSession, invitation_id: int, status: int) -> bool:
-    """Изменяет статус приглашения на батл\n
-    1 - ожидание, 2 - отмена, 3 - согласие"""
+async def change_status_invitation(session: AsyncSession, invitation_id: int, status: str) -> bool:
+    """Изменяет статус приглашения на батл"""
     invitation = await get_invitation(session, invitation_id)
     if not invitation:
         return False
@@ -190,22 +131,47 @@ async def change_status_invitation(session: AsyncSession, invitation_id: int, st
     return await safe_commit(session)
 
 
-async def assign_random_opponent(session: AsyncSession, tag_id: int, user_id: int) -> str | None:
-    """Возвращает ID видео из категории tag, не принадлежащее пользователю с user_id"""
-    # battles_user_not_finish = await session.execute(
-    #     select(Battle.participant_1)
-    #     .where(and_(
-    #
-    #     ))
-    # )
+async def get_user_ignore_set(session: AsyncSession, user_videos: list[Video]) -> set[str]:
+    user_id_videos = {video.video_id for video in user_videos}
+
     result = await session.execute(
-        select(Video.video_id)
+        select(InvitationBattle)
         .where(and_(
-            Video.user_id != user_id,
-            Video.tag_id == tag_id,
-            # not_in_(battles_user_not_finish)
+            or_(
+                InvitationBattle.video_id_accepting.in_(user_id_videos),
+                InvitationBattle.video_id_appointing.in_(user_id_videos)
+
+            ),
+            InvitationBattle.status.in_(("waiting", "agreement"))
         ))
     )
 
-    result = list(result.scalars().all())
-    return random.choice(result) if result else None
+    ignore_set_video_id = set()
+    for invitation in list(result.scalars().all()):
+        ignore_set_video_id.add(invitation.video_id_appointing)
+        ignore_set_video_id.add(invitation.video_id_accepting)
+
+    return ignore_set_video_id
+
+
+async def assign_random_opponent(session: AsyncSession, tag: str, user_id: int) -> str | None:
+    """Возвращает ID видео из категории tag, не принадлежащее пользователю с user_id"""
+
+    # Возможные претенденты
+    set_video_id = await session.execute(
+        select(Video.video_id)
+        .where(and_(
+            Video.user_id != user_id,
+            Video.tag_name == tag,
+            Video.is_active == True
+        ))
+    )
+    set_video_id = set(set_video_id.scalars().all())
+
+    user_videos = await get_user_videos_by_tag(session, tag, user_id)
+
+    # Множество видео для пропуска
+    ignore_set_video_id = await get_user_ignore_set(session, user_videos)
+
+    set_video_id = set_video_id - ignore_set_video_id
+    return random.choice(list(set_video_id)) if set_video_id else None

@@ -13,9 +13,9 @@ from utils.youtube import get_video_info
 
 
 async def check_and_get_videos(
-        session: AsyncSession, user_id: int, user_video_id: str, opponent_video_id
+        session: AsyncSession, user_id: int, user_video_id: str, opponent_video_id: str
 ) -> (Video, Video, str):
-    """Проводит необходимые проверки и возвращает объекты видео"""
+    """Проводит необходимые проверки, возвращает объекты видео и текст сообщения"""
     user_video = await get_video(session, user_video_id)
     if not user_video:
         return None, None, f"Видео пользователя не найдено [{user_video_id}]"
@@ -30,7 +30,7 @@ async def check_and_get_videos(
 
 
 async def handle_refusal(callback: types.CallbackQuery, session: AsyncSession) -> (str, bool):
-    """Отказаться от батла"""
+    """Отказаться от батла. Возвращает текст сообщения и логический результат"""
     invitation_id: int = dict(json.loads(callback.data)).get("invitation_id")
     if not invitation_id:
         return "Неверный формат данных", False
@@ -38,7 +38,7 @@ async def handle_refusal(callback: types.CallbackQuery, session: AsyncSession) -
     invitation = await get_invitation(session, invitation_id)
     if not invitation:
         return f"Приглашение №{invitation_id} не найдено", False
-    if invitation.status != 1:
+    if invitation.status != "waiting":
         return f"По приглашению №{invitation_id} уже принято решение", False
 
     user_video, opponent_video, error = await check_and_get_videos(
@@ -50,7 +50,7 @@ async def handle_refusal(callback: types.CallbackQuery, session: AsyncSession) -
     if error:
         return error, False
 
-    result = await change_status_invitation(session, invitation.invitation_id, 2)
+    result = await change_status_invitation(session, invitation.invitation_id, "cancel")  # todo сделать ENUM
     if not result:
         return "Произошла ошибка при сохранении в БД, попробуйте позже", False
 
@@ -66,7 +66,7 @@ async def handle_agreement(callback: types.CallbackQuery, session: AsyncSession)
     invitation = await get_invitation(session, invitation_id)
     if not invitation:
         return f"Приглашение №{invitation_id} не найдено", False
-    if invitation.status != 1:
+    if invitation.status != "waiting":
         return f"По приглашению №{invitation_id} уже принято решение", False
 
     user_video, opponent_video, error = await check_and_get_videos(
@@ -86,14 +86,15 @@ async def handle_agreement(callback: types.CallbackQuery, session: AsyncSession)
     if not opponent_video_info:
         return f"Не получилось найти видео соперника [{opponent_video.video_id}]. Возможно оно удалено", False
 
-    result = await change_status_invitation(session, invitation.invitation_id, 3)
+    result = await change_status_invitation(session, invitation.invitation_id, "agreement")  # todo сделать ENUM
     if not result:
         return "Произошла ошибка при сохранении в БД, попробуйте позже", False
 
     result = await new_battle(
         session,
         user_video.video_id, opponent_video.video_id,
-        user_video_info.likes, opponent_video_info.likes
+        user_video_info.likes, opponent_video_info.likes,
+        invitation_id, user_video.tag_name
     )
     if not result:
         return "Произошла ошибка при сохранении в БД, попробуйте позже", False
@@ -109,11 +110,11 @@ async def get_profile_info(user_id: int):
         return None
 
     img_path = f"../files/images/{user_id}.jpg"
-    if not os.path.exists(img_path):
+    if not os.path.exists(img_path) and photo.photos:
         await photo.photos[0][0].download(destination_file=img_path)
 
     return {
-        "photo_url_160": f"img/{user_id}.jpg",
+        "photo_url_160": f"img/{user_id}.jpg" if photo.photos else "img/no-img.jpg",
         "username_or_first_name": user.username if user.username else user.first_name,
         "url": user.url
     }

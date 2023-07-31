@@ -71,7 +71,6 @@ async def send_agreement_battle(invitation_id: int, session: AsyncSession):
 
 
 async def send_result_battle(winner_id: int, loser_id: int, battle_id: int):
-    # todo сделать кнопку просмотра результатов
     await vp_bot.send_message(
         winner_id,
         f"Ура, ты победил! Тебе начислены +{AWARD_FOR_VICTORY} VPcoins!",

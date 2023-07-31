@@ -4,6 +4,7 @@ from aiogram import Dispatcher, types
 from aiogram.utils import executor
 
 from bot.keyboard import battle_keyboard_for_user
+from db.alchemy.user import new_user
 from db.models.database import async_session_maker
 from functions import handle_refusal, handle_agreement
 from notification import send_refuse_battle, send_agreement_battle
@@ -19,6 +20,8 @@ def get_type_callback(callback: types.CallbackQuery):
 @dp.message_handler(commands=["start"])
 async def start_handler(msg: types.Message):
     await vp_bot.send_message(msg.chat.id, "Текст и ссылка на инструкцию по работе с ботом, оформленная в телеграф")
+    async with async_session_maker() as session:
+        await new_user(session, msg.chat.id)
 
 
 @dp.callback_query_handler(lambda callback: get_type_callback(callback) == "agreement")

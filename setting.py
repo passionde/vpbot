@@ -1,12 +1,20 @@
 START_VP_COINS = 5
 
-NOTIFICATIONS_PER_PAGE = 30
-VIDEOS_PER_PAGE = 30
-BATTLES_PER_PAGE = 30
+ITEMS_PER_PAGE = 5
 
-BATTLE_DURATION_DAY = 1
+BATTLE_DURATION_HOUR = 8
 
 REQUIRED_TAG = "vpch"
+
+TAGS_VIDEO = [
+    "random",
+    "vocal",
+    "sport",
+    "dance",
+    "beatbox",
+    "talent"
+]
+DEFAULT_TAG = "random"
 
 AWARD_FOR_VICTORY = 10
 DISCARD_FOR_LOSS = -5
