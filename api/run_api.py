@@ -11,6 +11,6 @@ if __name__ == "__main__":
         host=HOST,
         log_level="info",
         port=PORT,
-        # reload=True,
-        workers=WORKERS
+        workers=WORKERS,
+        log_config=f"{cwd}/../log.ini"
     )
