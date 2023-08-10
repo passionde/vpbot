@@ -1,4 +1,5 @@
 from fastapi import FastAPI, APIRouter
+from starlette.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
@@ -39,6 +40,14 @@ app = FastAPI(
     title="Документация API приложения VP Challenge",
     openapi_tags=tags_metadata,
     version="0.0.1"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # app.mount("/web", StaticFiles(directory="../files/static"), name="static")
