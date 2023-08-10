@@ -29,3 +29,18 @@ class GetUserInfoResponse(BaseModel):
         ...,
         description="Дата регистрации пользователя"
     )
+    photo_url_160: str = Field(
+        ...,
+        description="URL на первую фотографию пользователя 160x160",
+        example="http://212.113.121.231/img/1069351042.jpg"
+    )
+    username_or_first_name: str = Field(
+        ...,
+        description="Username пользователя или его имя",
+        example="passionde"
+    )
+    url: str = Field(
+        ...,
+        description="Ссылка на аккаунт пользователя",
+        example="tg://user?id=1069351042"
+    )

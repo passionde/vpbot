@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.dependencies.exception import APIException
+from bot.functions import get_profile_info
 from db.models.database import get_async_session
 from api.schemas.user import GetUserInfoResponse
 from api.responses.user import GetUserInfoSchema
@@ -17,12 +19,17 @@ async def get_user_info_router(
 ):
     """Данные профиля пользователя"""
     user = await get_user(session, launch_params.user_id)
+    info = await get_profile_info(launch_params.user_id)
+
+    if not info or not user:
+        raise APIException(1, "Error when requesting telegram API")
 
     return GetUserInfoResponse(
         user_id=user.user_id,
         vp_coins=user.vp_coins,
         rating=user.rating,
-        date_added=user.date_added
+        date_added=user.date_added,
+        **info
     )
 
 
