@@ -1,6 +1,6 @@
 from api.responses.base import BASE_MODEL_RESPONSE
 from api.schemas import base
-from api.schemas.battle import GetAllCurrentBattlesResponse
+from api.schemas.battle import GetAllCurrentBattlesResponse, AssignRandomOpponentResponse
 
 AppointBattleSchema = {
     **BASE_MODEL_RESPONSE,
@@ -71,4 +71,12 @@ GetAllCurrentBattlesSchema = {
         "model": GetAllCurrentBattlesResponse,
         "description": "Успешное выполнение"
     }
+}
+
+AssignRandomOpponentSchema = {
+    **BASE_MODEL_RESPONSE,
+    200: {
+        "model": AssignRandomOpponentResponse,
+        "description": "Успешное выполнение. Если видео не найдено, вернется пустая строка"
+    },
 }

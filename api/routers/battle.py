@@ -3,9 +3,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.dependencies.exception import APIException
 from api.dependencies.security import HeaderInitParams
-from api.responses.battle import AppointBattleSchema, GetAllCurrentBattlesSchema
+from api.responses.battle import AppointBattleSchema, GetAllCurrentBattlesSchema, AssignRandomOpponentSchema
 from api.schemas.base import SuccessResponse
-from api.schemas.battle import BattleMethodRequest, GetAllCurrentBattlesRequest, AssignRandomOpponentRequest
+from api.schemas.battle import BattleMethodRequest, GetAllCurrentBattlesRequest, AssignRandomOpponentRequest, \
+    AssignRandomOpponentResponse
+from bot.functions import get_profile_info
 from bot.notification import send_invitation_battle
 from db.alchemy.battle import add_invitation, check_pending_prompts, get_current_battles_by_tag, assign_random_opponent
 from db.alchemy.video import get_video
@@ -40,11 +42,18 @@ async def get_current_battles_by_tag_router(
 ):
     """Текущие батлы (незавершенные)"""
     current_battles = await get_current_battles_by_tag(session, params.page, params.tag)
-
     response = []
     for battle in current_battles:
         video_1 = await get_video(session, battle.video_id_1)
         video_2 = await get_video(session, battle.video_id_2)
+
+        info_1 = await get_profile_info(video_1.user_id)
+        if not info_1:
+            continue
+
+        info_2 = await get_profile_info(video_2.user_id)
+        if not info_2:
+            continue
 
         item = {
             "battle_id": battle.battle_id,
@@ -53,12 +62,14 @@ async def get_current_battles_by_tag_router(
             "participant_1": {
                 "video_id": battle.video_id_1,
                 "likes_start": battle.likes_start_1,
-                "user_id": video_1.user_id if video_1 else None
+                "user_id": video_1.user_id if video_1 else None,
+                **info_1
             },
             "participant_2": {
                 "video_id": battle.video_id_1,
                 "likes_start": battle.likes_start_1,
-                "user_id": video_2.user_id if video_2 else None
+                "user_id": video_2.user_id if video_2 else None,
+                **info_2
             },
         }
         response.append(item)
@@ -89,12 +100,14 @@ async def appoint_battle_router(
     return SuccessResponse(success=True)
 
 
-# todo Описать схему ответа
-@router.post("/assign-random-opponent")
+@router.post("/assign-random-opponent", responses=AssignRandomOpponentSchema)
 async def assign_random_opponent_router(
         launch_params: HeaderInitParams,
         params: AssignRandomOpponentRequest,
         session: AsyncSession = Depends(get_async_session)
 ):
-    return await assign_random_opponent(session, params.tag, launch_params.user_id)
+    video_id = await assign_random_opponent(session, params.tag, launch_params.user_id)
+    return AssignRandomOpponentResponse(
+        video_id=video_id if video_id else ""
+    )
 

@@ -6,7 +6,7 @@ from aiogram.utils.exceptions import BadRequest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.vp_bot import vp_bot
-from config import HOST, PORT
+from config import DOMAIN
 from db.alchemy.battle import get_invitation, change_status_invitation, new_battle
 from db.alchemy.video import get_video
 from db.models.video import Video
@@ -115,7 +115,7 @@ async def get_profile_info(user_id: int):
         await photo.photos[0][0].download(destination_file=img_path)
 
     return {
-        "photo_url_160": f"http://{HOST}:{PORT}/img/{user_id}.jpg" if photo.photos else "img/no-img.jpg",
+        "photo_url_160": f"{DOMAIN}/img/{user_id}.jpg" if photo.photos else f"{DOMAIN}/img/no-img.png",
         "username_or_first_name": user.username if user.username else user.first_name,
         "url": user.url
     }

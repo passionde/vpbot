@@ -4,7 +4,7 @@ from api.responses.tags import GetTagsSchema
 from api.dependencies.security import HeaderInitParams
 from setting import TAGS_VIDEO
 
-router = APIRouter(prefix="/user", tags=["Тэги"])
+router = APIRouter(prefix="/tags", tags=["Тэги"])
 
 
 @router.post("/get-tags", responses=GetTagsSchema)

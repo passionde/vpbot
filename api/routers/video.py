@@ -33,7 +33,8 @@ async def processing_existing_video(session: AsyncSession, video_id: str, user_i
         raise APIException(6, "video restored")
 
 
-@router.post("/get-videos-by-tag", responses=ListVideoInfoSchema)
+# Note временно удалено до изменения механики назначения противника
+# @router.post("/get-videos-by-tag", responses=ListVideoInfoSchema)
 async def get_all_videos_by_tag_router(
         _: HeaderInitParams,
         params: GetAllVideosByTagRequest,

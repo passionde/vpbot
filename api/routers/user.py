@@ -31,9 +31,3 @@ async def get_user_info_router(
         date_added=user.date_added,
         **info
     )
-
-
-@router.post("/get-user-statistics")
-async def get_user_statistics_router():
-    """Статистика пользователя"""
-    pass

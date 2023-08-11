@@ -32,7 +32,7 @@ class GetUserInfoResponse(BaseModel):
     photo_url_160: str = Field(
         ...,
         description="URL на первую фотографию пользователя 160x160",
-        example="http://212.113.121.231/img/1069351042.jpg"
+        example="https://vpchallenge.tw1.su/img/1069351042.jpg"
     )
     username_or_first_name: str = Field(
         ...,

@@ -44,6 +44,21 @@ class Participant(BaseModel):
         example=300
     )
     user_id: int = fields.user_id
+    photo_url_160: str = Field(
+        ...,
+        description="URL на первую фотографию пользователя 160x160",
+        example="https://vpchallenge.tw1.su/img/1069351042.jpg"
+    )
+    username_or_first_name: str = Field(
+        ...,
+        description="Username пользователя или его имя",
+        example="passionde"
+    )
+    url: str = Field(
+        ...,
+        description="Ссылка на аккаунт пользователя",
+        example="tg://user?id=1069351042"
+    )
 
 
 class ItemResponseGetAllCurrentBattles(BaseModel):
@@ -72,3 +87,7 @@ class GetAllCurrentBattlesResponse(BaseModel):
 
 class AssignRandomOpponentRequest(BaseModel):
     tag: str = fields.tag
+
+
+class AssignRandomOpponentResponse(BaseModel):
+    video_id: str = fields.video_id
