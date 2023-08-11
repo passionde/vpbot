@@ -110,7 +110,7 @@ async def get_profile_info(user_id: int):
     except BadRequest:
         return None
 
-    img_path = f"../files/images/{user_id}.jpg"
+    img_path = f"./files/images/{user_id}.jpg"
     if not os.path.exists(img_path) and photo.photos:
         await photo.photos[0][0].download(destination_file=img_path)
 
