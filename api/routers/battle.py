@@ -66,8 +66,8 @@ async def get_current_battles_by_tag_router(
                 **info_1
             },
             "participant_2": {
-                "video_id": battle.video_id_1,
-                "likes_start": battle.likes_start_1,
+                "video_id": battle.video_id_2,
+                "likes_start": battle.likes_start_2,
                 "user_id": video_2.user_id if video_2 else None,
                 **info_2
             },
@@ -111,3 +111,10 @@ async def assign_random_opponent_router(
         video_id=video_id if video_id else ""
     )
 
+
+@router.post("/get-battle-info")
+async def assign_random_opponent_router(
+        _: HeaderInitParams,
+        session: AsyncSession = Depends(get_async_session)
+):
+    pass
