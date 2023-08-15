@@ -17,7 +17,7 @@ async def new_battle(
         invitation_id: int, tag: str
 ) -> bool:
     battle_start = datetime.now()
-    battle_end = battle_start + timedelta(hours=BATTLE_DURATION_HOUR)
+    battle_end = battle_start + timedelta(minutes=BATTLE_DURATION_HOUR)  # todo изменить на часы
 
     battle = Battle(
         date_start=battle_start,
