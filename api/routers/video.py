@@ -10,7 +10,7 @@ from api.responses.video import AddNewVideoSchema, ListVideoInfoSchema, DelVideo
 from api.schemas.video import AddNewVideoRequest, GetAllVideosByTagRequest, DelVideoVideoRequest, VideoInfo, \
     ListVideoInfo
 from api.dependencies.security import HeaderInitParams
-from setting import TAGS_VIDEO, DEFAULT_TAG
+from setting import TAGS_VIDEO, DEFAULT_TAG, REQUIRED_TAG
 from utils.youtube import get_video_info, get_id_youtube_shorts, create_thumbnails
 from db.alchemy.video import new_video, get_video, change_is_active_status, get_videos_by_tag, get_user_all_videos, \
     get_user_videos_by_tag
@@ -120,9 +120,8 @@ async def add_new_video_router(
         raise APIException(2, "clip not found")
 
     # Проверка наличия обязательного тэга приложения
-    # todo вернуть
-    # if REQUIRED_TAG not in video_info.tags:
-    #     raise APIException(3, "the clip is missing a required application tag")
+    if REQUIRED_TAG not in video_info.tags:
+        raise APIException(3, "the clip is missing a required application tag")
 
     # Определение тэга видео
     video_tag = DEFAULT_TAG

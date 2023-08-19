@@ -2,7 +2,7 @@ START_VP_COINS = 50
 
 ITEMS_PER_PAGE = 10
 
-BATTLE_DURATION_HOUR = 5  # todo поменять на 8 часов
+BATTLE_DURATION_HOUR = 12
 
 REQUIRED_TAG = "vpch"
 
