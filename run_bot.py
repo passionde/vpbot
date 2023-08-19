@@ -12,6 +12,9 @@ from bot.vp_bot import vp_bot
 
 dp = Dispatcher(vp_bot)
 
+with open("bot/hello_text.txt") as f:
+    WELCOME_TEXT = f.read()
+
 
 def get_type_callback(callback: types.CallbackQuery):
     return dict(json.loads(callback.data)).get("type", "")
@@ -19,7 +22,7 @@ def get_type_callback(callback: types.CallbackQuery):
 
 @dp.message_handler(commands=["start"])
 async def start_handler(msg: types.Message):
-    await vp_bot.send_message(msg.chat.id, "Текст и ссылка на инструкцию по работе с ботом, оформленная в телеграф")
+    await vp_bot.send_message(msg.chat.id, WELCOME_TEXT)
     async with async_session_maker() as session:
         await new_user(session, msg.chat.id)
 

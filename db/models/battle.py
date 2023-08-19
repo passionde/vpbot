@@ -44,5 +44,5 @@ class InvitationBattle(Base):
     date_added = Column(DateTime(timezone=True), default=datetime.datetime.now)
 
     status = Column(Integer, ForeignKey("StatusInvitation.status"), default="waiting")  # todo сделать ENUM
-    video_id_appointing = Column(String, ForeignKey("Video.video_id"))
-    video_id_accepting: Column = Column(String, ForeignKey("Video.video_id"))
+    video_id_appointing: Column | str = Column(String, ForeignKey("Video.video_id"))
+    video_id_accepting: Column | str = Column(String, ForeignKey("Video.video_id"))

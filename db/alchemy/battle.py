@@ -35,6 +35,18 @@ async def new_battle(
     return await safe_commit(session)
 
 
+async def get_battle(session: AsyncSession, battle_id: int) -> Battle | None:
+    """Получает батл по ID"""
+    battle = await session.execute(
+        select(Battle)
+        .where(Battle.battle_id == battle_id)
+    )
+    battle = battle.first()
+    if not battle:
+        return None
+    return battle[0]
+
+
 async def get_current_battles_by_tag(session: AsyncSession, page: int, tag: str) -> List[Battle]:
     """Получение текущих незавершенных боев с учетом пагинации и категории тэга"""
     start_index = (abs(page) - 1) * ITEMS_PER_PAGE

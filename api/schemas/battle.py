@@ -1,4 +1,5 @@
 import datetime
+from typing import Optional
 
 from pydantic import BaseModel, Field
 from api.schemas import fields
@@ -91,3 +92,20 @@ class AssignRandomOpponentRequest(BaseModel):
 
 class AssignRandomOpponentResponse(BaseModel):
     video_id: str = fields.video_id
+
+
+class BattleInfoRequest(BaseModel):
+    battle_id: int = Field(
+        ...,
+        description="Номер батла",
+        example=2,
+    )
+
+
+class InvitationInfoRequest(BaseModel):
+    invitation_id: int = Field(
+        ...,
+        description="Номер приглашения",
+        example=2,
+    )
+

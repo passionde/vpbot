@@ -14,7 +14,7 @@ videos_not_found: dict[int: int] = {}
 
 
 def determine_winner(battle: Battle) -> (int, int):
-    """Определяет победителя и проигравшего. Возвращается ID  видио победителя и проигравшего"""
+    """Определяет победителя и проигравшего. Возвращается ID видио победителя и проигравшего"""
     total_likes_1 = battle.likes_finish_1 - battle.likes_start_1
     total_likes_2 = battle.likes_finish_2 - battle.likes_start_2
 
@@ -88,5 +88,3 @@ async def check_battle_completion():
         expired_battles = await get_expired_battles(session)
         for battle in expired_battles:
             await handle_battle(battle, session)
-
-
