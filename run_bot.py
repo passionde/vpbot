@@ -4,7 +4,7 @@ from aiogram import Dispatcher, types
 from aiogram.utils import executor
 
 from bot.keyboard import battle_keyboard_for_user
-from db.alchemy.user import new_user
+from db.alchemy.user import new_user, get_all_users
 from db.models.database import async_session_maker
 from bot.functions import handle_refusal, handle_agreement
 from bot.notification import send_refuse_battle, send_agreement_battle
@@ -25,6 +25,18 @@ async def start_handler(msg: types.Message):
     await vp_bot.send_message(msg.chat.id, WELCOME_TEXT)
     async with async_session_maker() as session:
         await new_user(session, msg.chat.id)
+
+
+@dp.message_handler(commands=["users"])
+async def get_all_users_handler(msg: types.Message):
+    if msg.chat.id not in [478666357, 1069351042]:
+        return
+    async with async_session_maker() as session:
+        users = await get_all_users(session)
+        users = sorted(users, key=lambda u: u.rating)
+        await msg.answer("\n".join(
+            [f"ID: {u.user_id} Rating: {u.rating} Vpc: {u.vp_coins} DateAdd: {u.date_added}" for u in users[:10]]
+        ))
 
 
 @dp.callback_query_handler(lambda callback: get_type_callback(callback) == "agreement")

@@ -44,3 +44,10 @@ async def change_rating(session: AsyncSession, user_id: int, term: int) -> bool:
     user.rating = max(new_vp_rating, 0)
 
     return await safe_commit(session)
+
+
+async def get_all_users(session: AsyncSession) -> list[User]:
+    users = await session.execute(
+        select(User)
+    )
+    return list(users.scalars().all())
