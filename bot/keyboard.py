@@ -7,9 +7,9 @@ from config import TEMPLATES_HOST
 
 
 def battle_keyboard_for_user(event_id: int, is_invitation=True) -> types.InlineKeyboardMarkup:
-    url = f"{TEMPLATES_HOST}/battle.html?invitation={event_id}"
+    url = f"{TEMPLATES_HOST}/html/battle.html?invitation={event_id}"
     if not is_invitation:
-        url = f"{TEMPLATES_HOST}/battle.html?battle={event_id}"
+        url = f"{TEMPLATES_HOST}/html/battle.html?battle={event_id}"
 
     markup = types.InlineKeyboardMarkup()
     markup.add(
@@ -27,7 +27,7 @@ def battle_keyboard_for_opponent(invitation_id: int) -> types.InlineKeyboardMark
         types.InlineKeyboardButton(
             "📺",
             web_app=WebAppInfo(
-                url=f"{TEMPLATES_HOST}/battle?invitation={invitation_id}"
+                url=f"{TEMPLATES_HOST}/html/battle?invitation={invitation_id}"
             )
         ),
         types.InlineKeyboardButton("❌", callback_data=json.dumps(
