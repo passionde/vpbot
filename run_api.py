@@ -12,5 +12,7 @@ if __name__ == "__main__":
         log_level="info",
         port=PORT,
         workers=WORKERS,
-        log_config=f"{cwd}/log.ini"
+        log_config=f"{cwd}/log.ini",
+        ssl_certfile="/etc/letsencrypt/live/vpchallenge.tw1.su/fullchain.pem",
+        ssl_keyfile="/etc/letsencrypt/live/vpchallenge.tw1.su/privkey.pem",
     )
